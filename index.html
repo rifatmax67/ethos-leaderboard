@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETHOS Network - Top KOL Leaderboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #666;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #e74c3c;
+            font-size: 1.1em;
+        }
+        
+        .leaderboard {
+            padding: 20px;
+        }
+        
+        .leader-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+        }
+        
+        .leader-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+        
+        .rank {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            min-width: 60px;
+        }
+        
+        .rank.top3 {
+            color: #FFD700;
+        }
+        
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 0 20px;
+            border: 3px solid #ddd;
+        }
+        
+        .info {
+            flex: 1;
+        }
+        
+        .name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .handle {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .score {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #4CAF50;
+            min-width: 100px;
+            text-align: right;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 15px 25px;
+            font-size: 1em;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .leader-item {
+                padding: 10px;
+            }
+            
+            .name {
+                font-size: 1em;
+            }
+            
+            .score {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 ETHOS Network</h1>
+            <p>Top KOL Mindshare Leaderboard - Last 7 Days</p>
+        </div>
+        
+        <div id="content">
+            <div class="loading">
+                <p>⏳ Loading leaderboard data...</p>
+            </div>
+        </div>
+    </div>
+    
+    <button class="refresh-btn" onclick="loadLeaderboard()" title="Refresh Data">
+        🔄 Refresh
+    </button>
+
+    <script>
+        async function loadLeaderboard() {
+            const contentDiv = document.getElementById('content');
+            
+            try {
+                contentDiv.innerHTML = '<div class="loading"><p>⏳ Loading leaderboard data...</p></div>';
+                
+                const response = await fetch('/api/leaderboard');
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (!data.data || !Array.isArray(data.data)) {
+                    throw new Error('Invalid data format received');
+                }
+                
+                displayLeaderboard(data.data);
+                
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+                contentDiv.innerHTML = `
+                    <div class="error">
+                        <p>❌ Failed to load leaderboard data</p>
+                        <p>${error.message}</p>
+                        <p>Please try again later or contact support.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayLeaderboard(leaderboardData) {
+            const contentDiv = document.getElementById('content');
+            
+            if (leaderboardData.length === 0) {
+                contentDiv.innerHTML = '<div class="error"><p>📭 No leaderboard data available</p></div>';
+                return;
+            }
+            
+            const leaderboardHTML = leaderboardData.map((item, index) => {
+                const rank = index + 1;
+                const isTop3 = rank <= 3;
+                const name = item.name || item.username || 'Unknown';
+                const handle = item.handle || item.username || '';
+                const score = typeof item.score === 'number' ? item.score.toFixed(2) : '0.00';
+                const avatar = item.profile_image_url || item.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=50&background=random`;
+                
+                return `
+                    <div class="leader-item">
+                        <div class="rank ${isTop3 ? 'top3' : ''}">#${rank}</div>
+                        <img class="avatar" src="${avatar}" alt="${name}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=50&background=random'">
+                        <div class="info">
+                            <div class="name">${name}</div>
+                            ${handle ? `<div class="handle">@${handle}</div>` : ''}
+                        </div>
+                        <div class="score">${score}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            contentDiv.innerHTML = `<div class="leaderboard">${leaderboardHTML}</div>`;
+        }
+        
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadLeaderboard);
+    </script>
+</body>
+</html>
